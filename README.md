@@ -27,6 +27,16 @@ user-facing application.
 
 ![Architecture diagram](docs/architecture.svg)
 
+## 📸 Screenshot
+
+Add a screenshot of the running app so your professor can see it at a glance:
+
+1. Run the app (`uvicorn web.server:app --reload` → http://127.0.0.1:8000).
+2. Save a screenshot as `docs/screenshot.png`.
+3. Uncomment this line:
+
+<!-- ![App screenshot](docs/screenshot.png) -->
+
 ## 🗂️ Repository structure
 
 ```
@@ -50,9 +60,12 @@ document-summarizer-ocr/
 ├── data/                         # (git-ignored) raw data
 ├── docs/
 │   ├── architecture.svg
-│   └── SETUP.md
+│   ├── SETUP.md
+│   └── DEPLOY.md
 ├── requirements.txt              # app + inference deps
 ├── requirements-train.txt        # fine-tuning deps
+├── Dockerfile                    # container for the web app
+├── .dockerignore
 └── LICENSE                       # MIT
 ```
 
@@ -113,6 +126,22 @@ for the exact commands.
 - **Hindi / Marathi** (out-of-the-box) — [IndicBART sentence summarizer](https://huggingface.co/ai4bharat/MultiIndicSentenceSummarization) (fine-tuned on IndicSentenceSummarization)
 - **Hindi / Marathi** (your own document-level model) — fine-tune [IndicBART](https://huggingface.co/ai4bharat/IndicBARTSS) on [XL-Sum](https://huggingface.co/datasets/csebuetnlp/xlsum) with the notebooks
 - **OCR** — [EasyOCR](https://github.com/JaidedAI/EasyOCR)
+
+## 📊 Results
+
+Fill in your ROUGE scores after running the Kaggle/local fine-tuning (the
+notebooks and `scripts/train.py` print them). The out-of-the-box Hindi/Marathi
+model already reports ~45–50 ROUGE-L on sentence summarization (see its
+[model card](https://huggingface.co/ai4bharat/MultiIndicSentenceSummarization)).
+
+| Language | Model | ROUGE-1 | ROUGE-2 | ROUGE-L |
+|----------|-------|---------|---------|---------|
+| English | BART (fine-tuned on CNN/DailyMail) | — | — | — |
+| Hindi | IndicBART (fine-tuned on XL-Sum) | — | — | — |
+| Marathi | IndicBART (fine-tuned on XL-Sum) | — | — | — |
+
+> **Tip:** include a before/after comparison (base model vs. your fine-tuned
+> model) — that's a compelling result to show a professor.
 
 ## 📚 References
 

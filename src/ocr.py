@@ -4,7 +4,11 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Any
 
-from .config import OCR_LANGUAGES
+from .config import OCR_LANGUAGES, PROJECT_ROOT
+
+# Keep EasyOCR's downloaded models inside the project cache (mirrors the HF
+# cache redirect) so the app works even when ~/.EasyOCR is unavailable.
+EASYOCR_CACHE = PROJECT_ROOT / ".cache" / "easyocr"
 
 
 @lru_cache(maxsize=1)
@@ -16,7 +20,11 @@ def get_reader(gpu: bool = False) -> Any:
     """
     import easyocr  # noqa: PLC0415
 
-    return easyocr.Reader(OCR_LANGUAGES, gpu=gpu)
+    return easyocr.Reader(
+        OCR_LANGUAGES,
+        gpu=gpu,
+        model_storage_directory=str(EASYOCR_CACHE),
+    )
 
 
 def image_to_text(image: Any, gpu: bool = False) -> str:
