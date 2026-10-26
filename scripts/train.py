@@ -47,7 +47,7 @@ from src.summarizer import _decoder_start_id  # noqa: E402
 PRESETS = {
     "en": {
         "model_id": "facebook/bart-base",
-        "dataset": "cnn_dailymail",
+        "dataset": "abisee/cnn_dailymail",
         "dataset_config": "3.0.0",
         "text_col": "article",
         "summary_col": "highlights",
@@ -113,9 +113,13 @@ def main() -> None:
     print(f"CUDA available: {use_cuda}")
 
     print(f"Loading dataset {dataset_name} ({dataset_config or '-'}) ...")
-    dataset = load_dataset(dataset_name, dataset_config) if dataset_config else load_dataset(dataset_name)
-    train = dataset["train"].shuffle(seed=42).select(range(args.train_size))
-    valid = dataset["validation"].shuffle(seed=42).select(range(args.eval_size))
+    # Slice in the split string so we only download the shards we actually use.
+    if dataset_config:
+        train = load_dataset(dataset_name, dataset_config, split=f"train[:{args.train_size}]").shuffle(seed=42)
+        valid = load_dataset(dataset_name, dataset_config, split=f"validation[:{args.eval_size}]").shuffle(seed=42)
+    else:
+        train = load_dataset(dataset_name, split=f"train[:{args.train_size}]").shuffle(seed=42)
+        valid = load_dataset(dataset_name, split=f"validation[:{args.eval_size}]").shuffle(seed=42)
 
     print(f"Loading model {model_id} ...")
     tokenizer = AutoTokenizer.from_pretrained(model_id, **preset["tokenizer_kwargs"])
@@ -127,8 +131,9 @@ def main() -> None:
 
     def preprocess(examples):
         model_inputs = tokenizer(examples[text_col], max_length=args.max_input_length, truncation=True)
-        with tokenizer.as_target_tokenizer():
-            labels = tokenizer(examples[summary_col], max_length=args.max_target_length, truncation=True)
+        # transformers >= 5 removed as_target_tokenizer(); tokenizing the
+        # target directly is equivalent for BART/Albert/IndicBART tokenizers.
+        labels = tokenizer(examples[summary_col], max_length=args.max_target_length, truncation=True)
         model_inputs["labels"] = labels["input_ids"]
         return model_inputs
 
@@ -140,21 +145,31 @@ def main() -> None:
 
     def compute_metrics(eval_pred):
         predictions, labels = eval_pred
-        decoded_preds = tokenizer.batch_decode(predictions, skip_special_tokens=True)
-        labels = np.where(labels != -100, labels, tokenizer.pad_token_id)
-        decoded_labels = tokenizer.batch_decode(labels, skip_special_tokens=True)
+
+        # transformers >= 5 may return predictions as a ragged list and pad
+        # generated ids with -100; normalize both before decoding.
+        def normalize(seqs):
+            if hasattr(seqs, "tolist"):
+                seqs = seqs.tolist()
+            return [[int(t) if int(t) != -100 else int(tokenizer.pad_token_id) for t in seq] for seq in seqs]
+
+        preds = normalize(predictions)
+        labs = normalize(labels)
+
+        decoded_preds = tokenizer.batch_decode(preds, skip_special_tokens=True)
+        decoded_labels = tokenizer.batch_decode(labs, skip_special_tokens=True)
         decoded_preds = ["\n".join(nltk.sent_tokenize(p.strip())) for p in decoded_preds]
         decoded_labels = ["\n".join(nltk.sent_tokenize(l.strip())) for l in decoded_labels]
         result = rouge.compute(predictions=decoded_preds, references=decoded_labels, use_stemmer=True)
         result = {k: round(v * 100, 2) for k, v in result.items()}
         result["gen_len"] = round(
-            float(np.mean([np.count_nonzero(p != tokenizer.pad_token_id) for p in predictions])), 2
+            float(np.mean([sum(1 for t in p if t != tokenizer.pad_token_id) for p in preds])), 2
         )
         return result
 
     training_args = Seq2SeqTrainingArguments(
         output_dir=output_dir,
-        evaluation_strategy="steps",
+        eval_strategy="steps",
         eval_steps=200,
         save_strategy="steps",
         save_steps=200,
@@ -175,7 +190,7 @@ def main() -> None:
         args=training_args,
         train_dataset=tokenized_train,
         eval_dataset=tokenized_valid,
-        tokenizer=tokenizer,
+        processing_class=tokenizer,
         data_collator=collator,
         compute_metrics=compute_metrics,
     )

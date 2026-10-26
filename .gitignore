@@ -22,6 +22,7 @@ kaggle/
 # Trained model weights (huge — do NOT commit)
 models/*
 !models/.gitkeep
+finetuned-*/
 
 # Hugging Face / EasyOCR model cache (huge — do NOT commit)
 .cache/

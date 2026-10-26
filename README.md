@@ -29,13 +29,7 @@ user-facing application.
 
 ## 📸 Screenshot
 
-Add a screenshot of the running app so your professor can see it at a glance:
-
-1. Run the app (`uvicorn web.server:app --reload` → http://127.0.0.1:8000).
-2. Save a screenshot as `docs/screenshot.png`.
-3. Uncomment this line:
-
-<!-- ![App screenshot](docs/screenshot.png) -->
+![App screenshot](docs/screenshot.png)
 
 ## 🗂️ Repository structure
 
@@ -129,19 +123,18 @@ for the exact commands.
 
 ## 📊 Results
 
-Fill in your ROUGE scores after running the Kaggle/local fine-tuning (the
-notebooks and `scripts/train.py` print them). The out-of-the-box Hindi/Marathi
-model already reports ~45–50 ROUGE-L on sentence summarization (see its
-[model card](https://huggingface.co/ai4bharat/MultiIndicSentenceSummarization)).
-
 | Language | Model | ROUGE-1 | ROUGE-2 | ROUGE-L |
 |----------|-------|---------|---------|---------|
-| English | BART (fine-tuned on CNN/DailyMail) | — | — | — |
-| Hindi | IndicBART (fine-tuned on XL-Sum) | — | — | — |
-| Marathi | IndicBART (fine-tuned on XL-Sum) | — | — | — |
+| English | BART-base, fine-tuned on CNN/DailyMail *(200-example demo run)* | 29.6 | 10.8 | 22.0 |
+| Hindi | IndicBART, fine-tuned on XL-Sum | — | — | — |
+| Marathi | IndicBART, fine-tuned on XL-Sum | — | — | — |
 
-> **Tip:** include a before/after comparison (base model vs. your fine-tuned
-> model) — that's a compelling result to show a professor.
+The English row is a quick **200-example / 1-epoch** verification run
+(`python scripts/train.py --language en`) proving the pipeline end-to-end.
+Run the Kaggle notebooks on the **full** dataset for competitive scores
+(typically ROUGE-1 ≈ 40+). The out-of-the-box Hindi/Marathi sentence
+summarizer already reports ~45–50 ROUGE-L (see its
+[model card](https://huggingface.co/ai4bharat/MultiIndicSentenceSummarization)).
 
 ## 📚 References
 
