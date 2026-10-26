@@ -19,7 +19,7 @@ user-facing application.
 | Document summarization | Abstractive summarization (BART / IndicBART) |
 | Image → text | EasyOCR (English + Hindi + Marathi) |
 | Image → summary | OCR output fed into the summarizer |
-| Regional languages | Hindi (`hi`), Marathi (`mr`) via [IndicBART](https://huggingface.co/ai4bharat/IndicBARTSS) |
+| Regional languages | Hindi (`hi`), Marathi (`mr`) via [IndicBART sentence summarizer](https://huggingface.co/ai4bharat/MultiIndicSentenceSummarization) |
 | Two frontends | **Web app** (FastAPI + HTML/CSS/JS) and **Streamlit** demo |
 | Train your own model | Kaggle notebooks **and** a local `scripts/train.py` |
 
@@ -110,7 +110,8 @@ for the exact commands.
 ## 🗂️ Datasets & models
 
 - **English** — [CNN/DailyMail](https://huggingface.co/datasets/cnn_dailymail) → [BART](https://huggingface.co/facebook/bart-base)
-- **Hindi / Marathi** — [XL-Sum](https://huggingface.co/datasets/csebuetnlp/xlsum) → [IndicBART](https://huggingface.co/ai4bharat/IndicBARTSS)
+- **Hindi / Marathi** (out-of-the-box) — [IndicBART sentence summarizer](https://huggingface.co/ai4bharat/MultiIndicSentenceSummarization) (fine-tuned on IndicSentenceSummarization)
+- **Hindi / Marathi** (your own document-level model) — fine-tune [IndicBART](https://huggingface.co/ai4bharat/IndicBARTSS) on [XL-Sum](https://huggingface.co/datasets/csebuetnlp/xlsum) with the notebooks
 - **OCR** — [EasyOCR](https://github.com/JaidedAI/EasyOCR)
 
 ## 📚 References

@@ -23,6 +23,9 @@ kaggle/
 models/*
 !models/.gitkeep
 
+# Hugging Face / EasyOCR model cache (huge — do NOT commit)
+.cache/
+
 # Data (do NOT commit raw data)
 data/*
 !data/.gitkeep

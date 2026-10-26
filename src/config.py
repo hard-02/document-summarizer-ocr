@@ -11,6 +11,25 @@ from pathlib import Path
 # Project root = parent of the `src/` directory.
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
+# --- Hugging Face cache location ------------------------------------------
+# Some shells set HF_HOME / HF_HUB_CACHE / TRANSFORMERS_CACHE to an external
+# drive (e.g. /Volumes/Hardik) that can be unmounted. If the configured cache
+# path does not exist, redirect all HF downloads to a project-local, always-
+# writable cache. This MUST run before `transformers` / `huggingface_hub` are
+# first imported — they are imported lazily inside src.summarizer / src.ocr,
+# so doing it here (at import time) is early enough.
+LOCAL_HF_CACHE = PROJECT_ROOT / ".cache" / "huggingface"
+
+
+def _redirect_broken_hf_cache() -> None:
+    for var in ("HF_HOME", "HF_HUB_CACHE", "TRANSFORMERS_CACHE", "HUGGINGFACE_HUB_CACHE"):
+        target = os.environ.get(var)
+        if target and not Path(target).exists():
+            os.environ[var] = str(LOCAL_HF_CACHE)
+
+
+_redirect_broken_hf_cache()
+
 # Directory where fine-tuned checkpoints live (git-ignored). Drop a folder
 # here and the app will prefer it over the public Hugging Face checkpoint.
 MODELS_DIR = Path(os.environ.get("MODELS_DIR", PROJECT_ROOT / "models"))
@@ -55,35 +74,35 @@ SUMMARIZATION_MODELS = {
         },
     },
     "hi": {
-        "model_id": "ai4bharat/IndicBARTSS",
+        "model_id": "ai4bharat/MultiIndicSentenceSummarization",
         "local_dir": "hindi",
         "lang_code": "hi_IN",
-        "tokenizer_kwargs": {"do_lower_case": False, "use_fast": False},
+        "tokenizer_kwargs": {"do_lower_case": False, "use_fast": False, "keep_accents": True},
         "max_input_tokens": 512,
         "max_target_tokens": 128,
         "gen_kwargs": {
-            "num_beams": 4,
-            "length_penalty": 1.0,
+            "num_beams": 5,
+            "length_penalty": 0.8,
             "no_repeat_ngram_size": 3,
             "early_stopping": True,
-            "min_length": 20,
-            "max_length": 128,
+            "min_length": 5,
+            "max_length": 64,
         },
     },
     "mr": {
-        "model_id": "ai4bharat/IndicBARTSS",
+        "model_id": "ai4bharat/MultiIndicSentenceSummarization",
         "local_dir": "marathi",
         "lang_code": "mr_IN",
-        "tokenizer_kwargs": {"do_lower_case": False, "use_fast": False},
+        "tokenizer_kwargs": {"do_lower_case": False, "use_fast": False, "keep_accents": True},
         "max_input_tokens": 512,
         "max_target_tokens": 128,
         "gen_kwargs": {
-            "num_beams": 4,
-            "length_penalty": 1.0,
+            "num_beams": 5,
+            "length_penalty": 0.8,
             "no_repeat_ngram_size": 3,
             "early_stopping": True,
-            "min_length": 20,
-            "max_length": 128,
+            "min_length": 5,
+            "max_length": 64,
         },
     },
 }

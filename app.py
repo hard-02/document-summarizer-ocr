@@ -85,8 +85,8 @@ min_length = st.sidebar.slider(
 
 st.sidebar.markdown("---")
 st.sidebar.caption(
-    "Models: BART-large-CNN (English) · IndicBART (Hindi/Marathi) · EasyOCR (en+hi+mr). "
-    "Fine-tune your own weights with the notebooks in `notebooks/`."
+    "Models: BART-large-CNN (English) · IndicBART summarizer (Hindi/Marathi) · "
+    "EasyOCR (en+hi+mr). Fine-tune your own weights with the notebooks in `notebooks/`."
 )
 
 st.title("📄 Multilingual Document & Image Summarizer")

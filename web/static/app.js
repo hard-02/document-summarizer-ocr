@@ -2,8 +2,8 @@
 
 const LANG_CONFIG = {
   en: { min: 40, max: 180 },
-  hi: { min: 20, max: 128 },
-  mr: { min: 20, max: 128 },
+  hi: { min: 5, max: 64 },
+  mr: { min: 5, max: 64 },
 };
 
 const state = {

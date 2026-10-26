@@ -25,6 +25,8 @@ from pathlib import Path
 # Make the repo root importable so we can reuse the src/ helpers.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+import src.config  # noqa: E402,F401  (redirects a broken HF cache before transformers imports)
+
 import evaluate  # noqa: E402
 import nltk  # noqa: E402
 import numpy as np  # noqa: E402
@@ -120,8 +122,8 @@ def main() -> None:
     model = AutoModelForSeq2SeqLM.from_pretrained(model_id)
 
     if preset["lang_code"]:
-        model.config.forced_bos_token_id = _decoder_start_id(tokenizer, preset["lang_code"])
-        print("forced_bos_token_id =", model.config.forced_bos_token_id)
+        model.generation_config.forced_bos_token_id = _decoder_start_id(tokenizer, preset["lang_code"])
+        print("forced_bos_token_id =", model.generation_config.forced_bos_token_id)
 
     def preprocess(examples):
         model_inputs = tokenizer(examples[text_col], max_length=args.max_input_length, truncation=True)
