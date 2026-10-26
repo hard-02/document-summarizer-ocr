@@ -1,0 +1,6 @@
+# Web app dependencies (installs the app deps too via the relative include).
+-r ../requirements.txt
+
+fastapi>=0.110
+uvicorn[standard]>=0.29
+python-multipart>=0.0.9

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Doc &amp; Image Summarizer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-inner">
+      <h1>📄 Multilingual Document &amp; Image Summarizer</h1>
+      <p>Summarize documents and images (via OCR) in English, Hindi, and Marathi.</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <div class="tabs" role="tablist">
+        <button class="tab active" data-tab="document" role="tab">📄 Document</button>
+        <button class="tab" data-tab="image" role="tab">🖼️ Image</button>
+        <button class="tab" data-tab="text" role="tab">✍️ Text</button>
+      </div>
+
+      <div class="controls">
+        <label class="field">
+          <span>Summary language</span>
+          <select id="language">
+            <option value="en">English</option>
+            <option value="hi">Hindi (हिन्दी)</option>
+            <option value="mr">Marathi (मराठी)</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Min words: <b id="min-val">40</b></span>
+          <input type="range" id="min-length" min="5" max="180" value="40" />
+        </label>
+        <label class="field">
+          <span>Max words: <b id="max-val">180</b></span>
+          <input type="range" id="max-length" min="20" max="180" value="180" />
+        </label>
+      </div>
+
+      <!-- Document panel -->
+      <div class="panel active" id="panel-document">
+        <div class="dropzone" id="dropzone-document">
+          <input type="file" id="file-document" accept=".txt,.pdf,.docx" hidden />
+          <div class="dropzone-icon">⬆️</div>
+          <p><b>Drop a file here</b> or click to browse</p>
+          <p class="muted">.txt · .pdf · .docx</p>
+        </div>
+      </div>
+
+      <!-- Image panel -->
+      <div class="panel" id="panel-image">
+        <div class="dropzone" id="dropzone-image">
+          <input type="file" id="file-image" accept=".png,.jpg,.jpeg" hidden />
+          <div class="dropzone-icon">🖼️</div>
+          <p><b>Drop an image here</b> or click to browse</p>
+          <p class="muted">.png · .jpg · .jpeg</p>
+        </div>
+        <img id="image-preview" class="preview hidden" alt="Preview" />
+      </div>
+
+      <!-- Text panel -->
+      <div class="panel" id="panel-text">
+        <textarea id="text-input" rows="10" placeholder="Paste text to summarize…"></textarea>
+      </div>
+
+      <button id="run-btn" class="primary" disabled>Summarize</button>
+      <div id="status" class="status hidden"></div>
+
+      <section id="result" class="result hidden">
+        <div class="result-head">
+          <h2>Summary</h2>
+          <div class="result-actions">
+            <button id="copy-btn" class="ghost">Copy</button>
+            <button id="download-btn" class="ghost">Download .txt</button>
+          </div>
+        </div>
+        <p id="summary-text" class="summary"></p>
+
+        <details id="source-details" class="source">
+          <summary>Show extracted / source text</summary>
+          <pre id="source-text"></pre>
+        </details>
+      </section>
+    </section>
+
+    <footer class="foot muted">
+      Models: BART-large-CNN (English) · IndicBART (Hindi/Marathi) · EasyOCR (en+hi+mr).
+      <a href="https://github.com" target="_blank" rel="noopener">View on GitHub</a>
+    </footer>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>

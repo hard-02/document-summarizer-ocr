@@ -1,0 +1,10 @@
+# --- Streamlit app (inference) ---
+streamlit>=1.30
+torch>=2.0
+transformers>=4.38
+sentencepiece>=0.1.99
+easyocr>=1.7
+pymupdf>=1.23
+python-docx>=1.1
+numpy>=1.24
+pillow>=9.0
