@@ -123,18 +123,19 @@ for the exact commands.
 
 ## 📊 Results
 
-| Language | Model | ROUGE-1 | ROUGE-2 | ROUGE-L |
-|----------|-------|---------|---------|---------|
-| English | BART-base, fine-tuned on CNN/DailyMail *(200-example demo run)* | 29.6 | 10.8 | 22.0 |
-| Hindi | IndicBART, fine-tuned on XL-Sum | — | — | — |
-| Marathi | IndicBART, fine-tuned on XL-Sum | — | — | — |
+| Language | Model | ROUGE-1 | ROUGE-2 | ROUGE-L | ROUGE-Lsum |
+|----------|-------|---------|---------|---------|------------|
+| English | BART-base, fine-tuned on CNN/DailyMail (2,000 examples, 2 epochs, Kaggle T4) | 40.65 | 19.10 | 28.30 | 37.59 |
+| Hindi | IndicBART, fine-tuned on XL-Sum (2,000 examples, 2 epochs) | 60.42 | 25.90 | 60.36 | 60.26 |
+| Marathi | IndicBART, fine-tuned on XL-Sum (2,000 examples, 2 epochs) | 45.76 | 16.44 | 45.65 | 45.65 |
 
-The English row is a quick **200-example / 1-epoch** verification run
-(`python scripts/train.py --language en`) proving the pipeline end-to-end.
-Run the Kaggle notebooks on the **full** dataset for competitive scores
-(typically ROUGE-1 ≈ 40+). The out-of-the-box Hindi/Marathi sentence
-summarizer already reports ~45–50 ROUGE-L (see its
-[model card](https://huggingface.co/ai4bharat/MultiIndicSentenceSummarization)).
+**English** is a solid BART fine-tune (val loss 1.96). **Hindi (60.4)** and
+**Marathi (45.8)** both work — the spot-check shows coherent, on-topic summaries.
+Both Indic models are *verbose* (they fill the 128-token cap, so ROUGE-1 is
+inflated by long/extractive output) because they were fine-tuned on only 2,000
+examples × 2 epochs — treat these as "strong for a small fine-tune", not SOTA.
+The earlier failed Marathi run (ROUGE-1 2.53, garbage) was from before the
+IndicBART `<2xx>` format fix; the re-run above is the real result.
 
 ## 📚 References
 

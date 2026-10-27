@@ -75,6 +75,24 @@ PRESETS = {
 }
 
 
+# XL-Sum is script-based and unsupported by datasets >= 4, so we load its
+# auto-converted Parquet shards directly by URL.
+_XLSUM_BASE = "https://huggingface.co/datasets/csebuetnlp/xlsum/resolve/refs%2Fconvert%2Fparquet"
+
+_XLSUM_PARQUET = {
+    "hi": {
+        "train": [f"{_XLSUM_BASE}/hindi/train/0000.parquet", f"{_XLSUM_BASE}/hindi/train/0001.parquet"],
+        "validation": [f"{_XLSUM_BASE}/hindi/validation/0000.parquet"],
+        "test": [f"{_XLSUM_BASE}/hindi/test/0000.parquet"],
+    },
+    "mr": {
+        "train": [f"{_XLSUM_BASE}/marathi/train/0000.parquet"],
+        "validation": [f"{_XLSUM_BASE}/marathi/validation/0000.parquet"],
+        "test": [f"{_XLSUM_BASE}/marathi/test/0000.parquet"],
+    },
+}
+
+
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Fine-tune a summarization model.")
     p.add_argument("--language", choices=["en", "hi", "mr"], default="en")
@@ -113,8 +131,12 @@ def main() -> None:
     print(f"CUDA available: {use_cuda}")
 
     print(f"Loading dataset {dataset_name} ({dataset_config or '-'}) ...")
-    # Slice in the split string so we only download the shards we actually use.
-    if dataset_config:
+    if args.language in _XLSUM_PARQUET:
+        # XL-Sum: load Parquet shards directly (script datasets unsupported in datasets >= 4).
+        ds = load_dataset("parquet", data_files=_XLSUM_PARQUET[args.language])
+        train = ds["train"].shuffle(seed=42).select(range(args.train_size))
+        valid = ds["validation"].shuffle(seed=42).select(range(args.eval_size))
+    elif dataset_config:
         train = load_dataset(dataset_name, dataset_config, split=f"train[:{args.train_size}]").shuffle(seed=42)
         valid = load_dataset(dataset_name, dataset_config, split=f"validation[:{args.eval_size}]").shuffle(seed=42)
     else:
@@ -126,14 +148,22 @@ def main() -> None:
     model = AutoModelForSeq2SeqLM.from_pretrained(model_id)
 
     if preset["lang_code"]:
-        model.generation_config.forced_bos_token_id = _decoder_start_id(tokenizer, preset["lang_code"])
-        print("forced_bos_token_id =", model.generation_config.forced_bos_token_id)
+        _start_id = _decoder_start_id(tokenizer, preset["lang_code"])
+        model.config.decoder_start_token_id = _start_id
+        model.generation_config.forced_bos_token_id = _start_id
+        print("decoder_start_token_id =", _start_id)
 
     def preprocess(examples):
-        model_inputs = tokenizer(examples[text_col], max_length=args.max_input_length, truncation=True)
-        # transformers >= 5 removed as_target_tokenizer(); tokenizing the
-        # target directly is equivalent for BART/Albert/IndicBART tokenizers.
-        labels = tokenizer(examples[summary_col], max_length=args.max_target_length, truncation=True)
+        if preset["lang_code"]:
+            # IndicBART expects "<text> </s> <2xx>" inputs and "<2xx> <summary> </s>" targets.
+            lang_tok = f"<2{preset['lang_code'][:2]}>"
+            inputs = [f"{t} </s> {lang_tok}" for t in examples[text_col]]
+            targets = [f"{lang_tok} {s} </s>" for s in examples[summary_col]]
+            model_inputs = tokenizer(inputs, max_length=args.max_input_length, truncation=True, add_special_tokens=False)
+            labels = tokenizer(targets, max_length=args.max_target_length, truncation=True, add_special_tokens=False)
+        else:
+            model_inputs = tokenizer(examples[text_col], max_length=args.max_input_length, truncation=True)
+            labels = tokenizer(examples[summary_col], max_length=args.max_target_length, truncation=True)
         model_inputs["labels"] = labels["input_ids"]
         return model_inputs
 
@@ -145,16 +175,29 @@ def main() -> None:
 
     def compute_metrics(eval_pred):
         predictions, labels = eval_pred
+        pad = int(tokenizer.pad_token_id)
 
-        # transformers >= 5 may return predictions as a ragged list and pad
-        # generated ids with -100; normalize both before decoding.
-        def normalize(seqs):
+        # Normalize to lists of plain ints and drop any negative/invalid
+        # sentinel id (e.g. -100) so decode never sees an out-of-range value.
+        def clean_ids(seqs):
             if hasattr(seqs, "tolist"):
                 seqs = seqs.tolist()
-            return [[int(t) if int(t) != -100 else int(tokenizer.pad_token_id) for t in seq] for seq in seqs]
+            out = []
+            for seq in seqs:
+                cleaned = []
+                for t in seq:
+                    try:
+                        v = int(t)
+                    except Exception:
+                        continue
+                    if v < 0:
+                        continue
+                    cleaned.append(v)
+                out.append(cleaned)
+            return out
 
-        preds = normalize(predictions)
-        labs = normalize(labels)
+        preds = clean_ids(predictions)
+        labs = clean_ids(labels)
 
         decoded_preds = tokenizer.batch_decode(preds, skip_special_tokens=True)
         decoded_labels = tokenizer.batch_decode(labs, skip_special_tokens=True)
@@ -162,9 +205,7 @@ def main() -> None:
         decoded_labels = ["\n".join(nltk.sent_tokenize(l.strip())) for l in decoded_labels]
         result = rouge.compute(predictions=decoded_preds, references=decoded_labels, use_stemmer=True)
         result = {k: round(v * 100, 2) for k, v in result.items()}
-        result["gen_len"] = round(
-            float(np.mean([sum(1 for t in p if t != tokenizer.pad_token_id) for p in preds])), 2
-        )
+        result["gen_len"] = round(float(np.mean([sum(1 for t in p if t != pad) for p in preds])), 2)
         return result
 
     training_args = Seq2SeqTrainingArguments(
