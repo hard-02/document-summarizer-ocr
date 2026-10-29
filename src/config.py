@@ -102,3 +102,8 @@ SUMMARIZATION_MODELS = {
         },
     },
 }
+
+# ---------------------------------------------------------------------------
+# OCR (EasyOCR) — used only in local mode; the Gemini backend uses vision OCR.
+# ---------------------------------------------------------------------------
+OCR_LANGUAGES = ["en", "hi"]

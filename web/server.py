@@ -21,12 +21,13 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from src.config import LANGUAGES, SUMMARY_PROVIDER, SUMMARIZATION_MODELS
+from src.ocr import image_to_text_any
 from src.summarizer import summarize
 from src.text_extraction import extract_text
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 
-app = FastAPI(title="Document Summarizer API", version="2.0.0")
+app = FastAPI(title="Document Summarizer API", version="2.1.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -98,6 +99,28 @@ async def summarize_document(
 
     summary = summarize(text, language, max_length, min_length)
     return SummaryResponse(language=language, summary=summary, source_text=text, source_length=len(text))
+
+
+@app.post("/api/ocr-summarize", response_model=SummaryResponse)
+async def ocr_summarize(
+    file: UploadFile = File(...),
+    language: str = Form("en"),
+    max_length: Optional[int] = Form(None),
+    min_length: Optional[int] = Form(None),
+) -> SummaryResponse:
+    language = _validate_language(language)
+    data = await file.read()
+
+    try:
+        ocr_text = image_to_text_any(image_bytes=data, mime_type=file.content_type or "image/png")
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=400, detail=f"OCR failed: {exc}") from exc
+
+    if not ocr_text.strip():
+        raise HTTPException(status_code=422, detail="No text detected in the image")
+
+    summary = summarize(ocr_text, language, max_length, min_length)
+    return SummaryResponse(language=language, summary=summary, source_text=ocr_text, source_length=len(ocr_text))
 
 
 # Serve the frontend last so /api/* routes take precedence.

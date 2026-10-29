@@ -14,19 +14,21 @@ free deployment.
 | Capability | Implementation |
 |-----------|----------------|
 | Document summarization | Abstractive summarization (BART / IndicBART) |
+| Image → text | EasyOCR locally · Gemini vision in the cloud |
 | Languages | English (`en`) and Hindi (`hi`) |
-| Input formats | `.txt`, `.pdf`, `.docx`, pasted text |
+| Input formats | `.txt`, `.pdf`, `.docx`, images (`.png/.jpg`), pasted text |
 | Two frontends | **Web app** (FastAPI + HTML/CSS/JS) and **Streamlit** |
-| Optional API backend | Google **Gemini** (no PyTorch, fast, free-tier friendly) |
+| Optional API backend | Google **Gemini** (text + vision OCR, no PyTorch) |
 | Train your own model | Kaggle notebooks **and** a local `scripts/train.py` |
 
 ## 🧠 Architecture
 
 ```
- Document (.txt/.pdf/.docx) ──► text extraction ──► Summarizer ──► Summary
-                                                    │
-                        local: BART (en) / IndicBART (hi)
-                        or:    Gemini API (no torch)
+ Document (.txt/.pdf/.docx) ──► text extraction ──┐
+ Image (.png/.jpg) ──► OCR (EasyOCR / Gemini) ─────┴──► Summarizer ──► Summary
+                                                        │
+                            local: BART (en) / IndicBART (hi)
+                            or:    Gemini API (no torch)
 ```
 
 The app first checks `models/<lang>/` for a fine-tuned checkpoint. If none is
@@ -44,8 +46,9 @@ document-summarizer-ocr/
 ├── src/
 │   ├── config.py                 # model registry + provider config
 │   ├── text_extraction.py        # .txt / .pdf / .docx readers
+│   ├── ocr.py                    # EasyOCR (local) / Gemini vision (cloud)
 │   ├── summarizer.py             # local models + Gemini routing
-│   └── llm_api.py                # Gemini REST client (stdlib only)
+│   └── llm_api.py                # Gemini REST client (text + vision)
 ├── scripts/train.py              # local fine-tuning (en / hi)
 ├── notebooks/                    # Kaggle fine-tuning notebooks
 │   ├── 01_finetune_english_bart.ipynb

@@ -5,12 +5,13 @@ Run with:
 
 Supported inputs:
   * Documents (.txt / .pdf / .docx) -> abstractive summary
+  * Images (.png / .jpg)             -> OCR -> summary
   * Pasted text                      -> abstractive summary
 
 Languages: English, Hindi.
 
-Set SUMMARY_PROVIDER=gemini + GEMINI_API_KEY to use the Gemini API backend,
-or leave SUMMARY_PROVIDER=local (default) to use the fine-tuned models.
+Set SUMMARY_PROVIDER=gemini + GEMINI_API_KEY (env var or Streamlit secrets) to
+use the Gemini API backend, or leave it unset for the fine-tuned local models.
 """
 from __future__ import annotations
 
@@ -30,6 +31,7 @@ except Exception:  # no secrets.toml present locally
     pass
 
 from src.config import LANGUAGES, SUMMARIZATION_MODELS, SUMMARY_PROVIDER  # noqa: E402
+from src.ocr import image_to_text_any  # noqa: E402
 from src.summarizer import summarize  # noqa: E402
 from src.text_extraction import extract_text  # noqa: E402
 
@@ -73,7 +75,7 @@ def render_summary(text: str, language: str, min_length: int, max_length: int) -
 
 
 st.sidebar.title("Controls")
-mode = st.sidebar.radio("Input type", ["📄 Document", "✍️ Text"])
+mode = st.sidebar.radio("Input type", ["📄 Document", "🖼️ Image", "✍️ Text"])
 language_label = st.sidebar.selectbox("Summary language", list(LANG_LABELS), index=0)
 language = LANG_LABELS[language_label]
 
@@ -89,20 +91,17 @@ min_length = st.sidebar.slider(
 
 st.sidebar.markdown("---")
 if SUMMARY_PROVIDER == "gemini":
-    st.sidebar.caption("Backend: **Gemini API** (no local model download).")
+    st.sidebar.caption("Backend: **Gemini API** (text + vision OCR). No local models.")
 else:
-    st.sidebar.caption(
-        "Backend: **local fine-tuned models** (BART for English, IndicBART for Hindi). "
-        "Set `SUMMARY_PROVIDER=gemini` + `GEMINI_API_KEY` to use the API instead."
-    )
+    st.sidebar.caption("Backend: **local fine-tuned models** (BART / IndicBART) + EasyOCR.")
 
 st.title("📄 Multilingual Document Summarizer")
-st.markdown("Upload a document or paste text, pick a language, and get an abstractive summary in English or Hindi.")
+st.markdown(
+    "Upload a document or image, or paste text, and get an abstractive summary in English or Hindi."
+)
 
 if mode == "📄 Document":
-    uploaded = st.file_uploader(
-        "Upload a document", type=["txt", "pdf", "docx"], help=".txt, .pdf, or .docx"
-    )
+    uploaded = st.file_uploader("Upload a document", type=["txt", "pdf", "docx"], help=".txt, .pdf, or .docx")
     if uploaded is not None:
         with tempfile.TemporaryDirectory() as tmpdir:
             path = Path(tmpdir) / uploaded.name
@@ -119,6 +118,27 @@ if mode == "📄 Document":
 
         if st.button("Summarize document", type="primary"):
             render_summary(text, language, min_length, max_length)
+
+elif mode == "🖼️ Image":
+    uploaded = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"], help="PNG / JPG / JPEG")
+    if uploaded is not None:
+        image_bytes = uploaded.getvalue()
+        st.image(image_bytes, caption=uploaded.name, use_container_width=True)
+
+        if st.button("Extract text & summarize", type="primary"):
+            with st.spinner("Extracting text from image…"):
+                try:
+                    ocr_text = image_to_text_any(image_bytes=image_bytes, mime_type=uploaded.type or "image/png")
+                except Exception as exc:  # noqa: BLE001
+                    st.error(f"OCR failed: {exc}")
+                    st.stop()
+
+            st.markdown(f"**Extracted {len(ocr_text):,} characters**")
+            with st.expander("Show extracted text", expanded=False):
+                st.text_area("OCR text", ocr_text, height=250, label_visibility="collapsed")
+
+            render_summary(ocr_text, language, min_length, max_length)
+
 else:
     pasted = st.text_area("Paste text to summarize", height=260, placeholder="Paste text here…")
     if st.button("Summarize text", type="primary"):
