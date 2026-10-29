@@ -5,7 +5,7 @@ Kaggle fine-tuning notebooks (run on a free GPU).
 | Notebook | Model | Dataset | Languages | Output folder |
 |----------|-------|---------|-----------|---------------|
 | [`01_finetune_english_bart.ipynb`](01_finetune_english_bart.ipynb) | `facebook/bart-base` | CNN/DailyMail | English | `bart-finetuned-cnn` → `models/english/` |
-| [`02_finetune_indicbart_hindi_marathi.ipynb`](02_finetune_indicbart_hindi_marathi.ipynb) | `ai4bharat/IndicBARTSS` | XL-Sum | Hindi, Marathi | `indicbart-finetuned-{hindi,marathi}` → `models/{hindi,marathi}/` |
+| [`02_finetune_indicbart_hindi.ipynb`](02_finetune_indicbart_hindi.ipynb) | `ai4bharat/IndicBARTSS` | XL-Sum | Hindi | `indicbart-finetuned-hindi` → `models/hindi/` |
 
 ## How to use on Kaggle
 
@@ -23,6 +23,7 @@ you can run on your own machine:
 ```bash
 pip install -r ../requirements.txt -r ../requirements-train.txt
 python ../scripts/train.py --language en --epochs 2
+python ../scripts/train.py --language hi --epochs 2
 ```
 
 Both the notebooks and the script evaluate with **ROUGE** (via `evaluate` +
