@@ -9,7 +9,10 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Any
 
-from .config import OCR_LANGUAGES
+try:
+    from .config import OCR_LANGUAGES
+except ImportError:  # defensive: an older config without OCR settings
+    OCR_LANGUAGES = ["en", "hi"]
 
 
 @lru_cache(maxsize=1)
