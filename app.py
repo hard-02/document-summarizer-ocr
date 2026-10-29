@@ -14,14 +14,24 @@ or leave SUMMARY_PROVIDER=local (default) to use the fine-tuned models.
 """
 from __future__ import annotations
 
+import os
 import tempfile
 from pathlib import Path
 
 import streamlit as st
 
-from src.config import LANGUAGES, SUMMARIZATION_MODELS, SUMMARY_PROVIDER
-from src.summarizer import summarize
-from src.text_extraction import extract_text
+# Streamlit Cloud: expose secrets as env vars BEFORE importing src modules,
+# because src/config.py reads them at import time.
+try:
+    for _key in ("SUMMARY_PROVIDER", "GEMINI_API_KEY", "GEMINI_MODEL"):
+        if _key in st.secrets and not os.environ.get(_key):
+            os.environ[_key] = str(st.secrets[_key])
+except Exception:  # no secrets.toml present locally
+    pass
+
+from src.config import LANGUAGES, SUMMARIZATION_MODELS, SUMMARY_PROVIDER  # noqa: E402
+from src.summarizer import summarize  # noqa: E402
+from src.text_extraction import extract_text  # noqa: E402
 
 st.set_page_config(page_title="Document Summarizer", page_icon="📄", layout="wide")
 

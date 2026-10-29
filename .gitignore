@@ -44,3 +44,6 @@ Thumbs.db
 *.safetensors
 *.onnx
 runs/
+
+# Streamlit secrets (never commit)
+.streamlit/secrets.toml

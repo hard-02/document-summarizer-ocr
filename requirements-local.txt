@@ -1,0 +1,9 @@
+# Local fine-tuned models (BART for English, IndicBART for Hindi).
+# For the lightweight Gemini/Streamlit-Cloud setup, use requirements.txt.
+-r requirements.txt
+
+torch>=2.0
+transformers>=4.38
+sentencepiece>=0.1.99
+numpy>=1.24
+pillow>=9.0

@@ -69,18 +69,22 @@ document-summarizer-ocr/
 python -m venv .venv
 source .venv/bin/activate
 
-pip install -r requirements.txt
+pip install -r requirements-local.txt
 streamlit run app.py            # or: uvicorn web.server:app --reload
 ```
 
-### Gemini API backend (no torch)
+### Gemini backend (lightweight — Streamlit or FastAPI)
 
 ```bash
-pip install -r requirements-api.txt
+pip install -r requirements.txt        # Streamlit, no torch
+
 export SUMMARY_PROVIDER=gemini
 export GEMINI_API_KEY=your_key
-uvicorn web.server:app --reload     # http://127.0.0.1:8000
+streamlit run app.py
 ```
+
+For the FastAPI version instead, use `pip install -r requirements-api.txt` and
+`uvicorn web.server:app --reload`.
 
 ## 🎓 Fine-tune
 
@@ -108,7 +112,23 @@ the 128-token cap, so ROUGE-1 is inflated by long output) — treat these as
 
 ## ☁️ Deploy
 
-- **Gemini demo on Render (free):** see [docs/DEPLOY_RENDER.md](docs/DEPLOY_RENDER.md).
+### Streamlit Community Cloud (Gemini, free)
+
+1. Push to GitHub (already done).
+2. Go to [share.streamlit.io](https://share.streamlit.io) → **New app**.
+3. Repo `hard-02/document-summarizer-ocr`, branch `main`, main file `app.py`.
+4. **Advanced settings → Secrets**:
+   ```toml
+   SUMMARY_PROVIDER = "gemini"
+   GEMINI_API_KEY = "your-key"
+   ```
+5. **Deploy**.
+
+The cloud build is lightweight (no PyTorch) and runs entirely on the Gemini API.
+
+### Other options
+
+- **Gemini demo on Render:** see [docs/DEPLOY_RENDER.md](docs/DEPLOY_RENDER.md).
 - **Hugging Face static page:** the existing Space is a static landing page.
 - **Docker:** `Dockerfile` (local models) or `Dockerfile.api` (Gemini).
 
