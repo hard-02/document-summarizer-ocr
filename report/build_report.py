@@ -306,6 +306,10 @@ table(doc, ["Figure Title", "Page No."], [
     ["Fig. 5.1: General System Flowchart", "12"],
     ["Fig. 5.2: Data Flow Diagram (Level 0)", "12"],
     ["Fig. 5.3: Web Application User Interface", "14"],
+    ["Fig. A.1: Summarization function", "20"],
+    ["Fig. A.2: OCR routing", "20"],
+    ["Fig. A.3: Image summarization endpoint", "21"],
+    ["Fig. A.4: Gemini vision client", "21"],
 ], widths=[13.5, 3.0])
 
 # ---------------------------------------------------------------- LIST OF TABLES
@@ -768,50 +772,41 @@ numbered(doc, [
 # ---------------------------------------------------------------- APPENDIX A
 doc.add_page_break()
 para(doc, "APPENDIX A: IMPORTANT CODE SNIPPETS", size=14, bold=True, align="center", after=10)
-para(doc, "Short, relevant excerpts from the project source code are given below.",
+para(doc, "The screenshots below show the main code modules of the project.",
      style="Body Text", align="justify")
+
+CODE_DIR = ROOT / "report" / "code_screenshots"
+
+
+def code_image(doc, filename, caption):
+    path = CODE_DIR / filename
+    if path.exists():
+        p = doc.add_paragraph()
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p.add_run().add_picture(str(path), width=Cm(15.0))
+    para(doc, caption, size=10, italic=True, align="center")
+
+
 subsection(doc, "A.1 Summarization Function")
 para(doc, "Source file: src/summarizer.py", size=10, italic=True)
-para(doc, "The summarize() function routes to Gemini when configured, otherwise it loads the "
+para(doc, "The summarize() function routes to Gemini when configured; otherwise it loads the "
      "language-specific model, tokenizes the input, applies the IndicBART format where required, "
      "and generates the summary with beam search.", style="Body Text", align="justify")
-code = ("def summarize(text, language, max_length=None, min_length=None):\n"
-        "    if SUMMARY_PROVIDER == \"gemini\":\n"
-        "        return summarize_with_gemini(text, language, max_length, min_length)\n"
-        "    tokenizer, model = _load_pipeline(language)\n"
-        "    inputs = tokenizer(text, max_length=512, truncation=True, return_tensors=\"pt\")\n"
-        "    output = model.generate(**inputs, num_beams=4, max_length=128)\n"
-        "    return _decode_clean(tokenizer, output[0].tolist())")
-p = doc.add_paragraph()
-r = p.add_run(code)
-r.font.name = "Courier New"
-r.font.size = Pt(9)
+code_image(doc, "01_summarizer.png", "Figure A.1: Summarization function (src/summarizer.py)")
 
 subsection(doc, "A.2 OCR Routing")
 para(doc, "Source file: src/ocr.py", size=10, italic=True)
 para(doc, "image_to_text_any() uses Gemini vision in cloud mode and EasyOCR in local mode.",
      style="Body Text", align="justify")
-code = ("def image_to_text_any(image=None, image_bytes=None, mime_type=\"image/png\"):\n"
-        "    if SUMMARY_PROVIDER == \"gemini\":\n"
-        "        return extract_text_with_gemini(image_bytes, mime_type)\n"
-        "    return image_to_text(Image.open(io.BytesIO(image_bytes)))")
-p = doc.add_paragraph()
-r = p.add_run(code)
-r.font.name = "Courier New"
-r.font.size = Pt(9)
+code_image(doc, "02_ocr.png", "Figure A.2: OCR routing (src/ocr.py)")
 
 subsection(doc, "A.3 FastAPI Image Endpoint")
 para(doc, "Source file: web/server.py", size=10, italic=True)
-code = ("@app.post(\"/api/ocr-summarize\")\n"
-        "async def ocr_summarize(file: UploadFile, language: str = Form(\"en\")):\n"
-        "    data = await file.read()\n"
-        "    text = image_to_text_any(image_bytes=data, mime_type=file.content_type)\n"
-        "    summary = summarize(text, language)\n"
-        "    return {\"summary\": summary, \"source_text\": text}")
-p = doc.add_paragraph()
-r = p.add_run(code)
-r.font.name = "Courier New"
-r.font.size = Pt(9)
+code_image(doc, "03_api.png", "Figure A.3: Image summarization endpoint (web/server.py)")
+
+subsection(doc, "A.4 Gemini Vision Client")
+para(doc, "Source file: src/llm_api.py", size=10, italic=True)
+code_image(doc, "04_gemini.png", "Figure A.4: Gemini vision OCR client (src/llm_api.py)")
 
 # ---------------------------------------------------------------- APPENDIX B
 doc.add_page_break()
