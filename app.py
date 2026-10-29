@@ -111,6 +111,15 @@ if SUMMARY_PROVIDER == "gemini":
 else:
     st.sidebar.caption("Backend: **local fine-tuned models** (BART / IndicBART) + EasyOCR.")
 
+if SUMMARY_PROVIDER == "gemini":
+    st.success("⚡ Backend: **Gemini API** — no local models, no download.")
+else:
+    st.warning(
+        "💻 Backend: **local fine-tuned models**. "
+        "Add `GEMINI_API_KEY` in Streamlit Cloud → Settings → Secrets (then reboot) to use Gemini."
+    )
+st.caption(f"Provider: `{SUMMARY_PROVIDER}` · key: `{'set' if GEMINI_API_KEY else 'missing'}`")
+
 st.title("📄 Multilingual Document Summarizer")
 st.markdown(
     "Upload a document or image, or paste text, and get an abstractive summary in English or Hindi."
