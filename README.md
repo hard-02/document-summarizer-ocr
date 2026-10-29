@@ -122,10 +122,11 @@ the 128-token cap, so ROUGE-1 is inflated by long output) — treat these as
 3. Repo `hard-02/document-summarizer-ocr`, branch `main`, main file `app.py`.
 4. **Advanced settings → Secrets**:
    ```toml
-   SUMMARY_PROVIDER = "gemini"
    GEMINI_API_KEY = "your-key"
    ```
-5. **Deploy**.
+   A key alone is enough — the app auto-selects Gemini. Optionally add
+   `SUMMARY_PROVIDER = "gemini"` too.
+5. **Deploy**, then **reboot** the app so the secrets take effect.
 
 The cloud build is lightweight (no PyTorch) and runs entirely on the Gemini API.
 

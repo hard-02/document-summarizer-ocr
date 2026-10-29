@@ -24,18 +24,34 @@ import streamlit as st
 # Streamlit Cloud: expose secrets as env vars BEFORE importing src modules,
 # because src/config.py reads them at import time.
 try:
+    _secrets = st.secrets
     for _key in ("SUMMARY_PROVIDER", "GEMINI_API_KEY", "GEMINI_MODEL"):
-        if _key in st.secrets and not os.environ.get(_key):
-            os.environ[_key] = str(st.secrets[_key])
+        try:
+            _val = _secrets[_key]
+        except Exception:
+            continue
+        if _val and not os.environ.get(_key):
+            os.environ[_key] = str(_val)
 except Exception:  # no secrets.toml present locally
     pass
 
-from src.config import LANGUAGES, SUMMARIZATION_MODELS, SUMMARY_PROVIDER  # noqa: E402
+from src.config import (  # noqa: E402
+    GEMINI_API_KEY,
+    LANGUAGES,
+    SUMMARIZATION_MODELS,
+    SUMMARY_PROVIDER,
+)
 from src.ocr import image_to_text_any  # noqa: E402
 from src.summarizer import summarize  # noqa: E402
 from src.text_extraction import extract_text  # noqa: E402
 
 st.set_page_config(page_title="Document Summarizer", page_icon="📄", layout="wide")
+
+if SUMMARY_PROVIDER == "gemini" and not GEMINI_API_KEY:
+    st.error(
+        "Gemini is selected but no API key was found. "
+        "Add `GEMINI_API_KEY` in Streamlit Cloud → Manage app → Settings → Secrets, then reboot."
+    )
 
 LANG_LABELS = {name: code for code, name in LANGUAGES.items()}
 

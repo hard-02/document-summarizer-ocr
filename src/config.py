@@ -49,10 +49,13 @@ def resolve_device() -> str:
 # ---------------------------------------------------------------------------
 # "local"  -> fine-tuned BART / IndicBART (needs torch + transformers)
 # "gemini" -> Google Gemini API (needs GEMINI_API_KEY; no torch required)
-SUMMARY_PROVIDER = os.environ.get("SUMMARY_PROVIDER", "local").strip().lower()
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "").strip()
 GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.5-flash").strip()
 GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models"
+
+# If a Gemini key is present, default to the Gemini backend automatically.
+_default_provider = "gemini" if GEMINI_API_KEY else "local"
+SUMMARY_PROVIDER = os.environ.get("SUMMARY_PROVIDER", _default_provider).strip().lower()
 
 # Languages offered by the UI.
 LANGUAGES = {
