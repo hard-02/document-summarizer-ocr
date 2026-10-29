@@ -1,8 +1,12 @@
 """Language-aware abstractive summarization.
 
-Loads one (tokenizer, model) pair per language on first use and caches it.
-Prefers a local fine-tuned checkpoint in ``models/<lang>`` when present,
-otherwise falls back to the public Hugging Face checkpoint from ``config``.
+Two backends are supported, selected by ``SUMMARY_PROVIDER``:
+
+* ``local``  - fine-tuned BART (English) / IndicBART (Hindi) checkpoints.
+* ``gemini`` - the Google Gemini API (no PyTorch required).
+
+For the local backend, a fine-tuned checkpoint in ``models/<lang>`` is used
+when present, otherwise the public Hugging Face checkpoint.
 """
 from __future__ import annotations
 
@@ -13,12 +17,7 @@ from .config import MODELS_DIR, SUMMARIZATION_MODELS, resolve_device
 
 
 def _decoder_start_id(tokenizer: Any, lang_code: str) -> int | None:
-    """Resolve the forced decoder-start token id for Indic (mBART-style) models.
-
-    Handles both tokenizer conventions:
-      * mBART50-style ``tokenizer.lang_code_to_id["hi_IN"]``
-      * IndicBART-style added tokens like ``<2hi>``
-    """
+    """Resolve the forced decoder-start token id for Indic (mBART-style) models."""
     if not lang_code:
         return None
 
@@ -35,13 +34,7 @@ def _decoder_start_id(tokenizer: Any, lang_code: str) -> int | None:
 
 
 def _decode_clean(tokenizer: Any, output_ids: list[int]) -> str:
-    """Decode generated ids, stripping special AND added control tokens.
-
-    IndicBART keeps its language/format tokens (``<s>``, ``</s>``, ``<2hi>``,
-    ``<2mr>``, ...) in the *added* vocabulary rather than the special-token
-    list, so ``skip_special_tokens=True`` does not remove them. Strip any
-    added token that is angle-bracketed (``<...>``) plus all special ids.
-    """
+    """Decode generated ids, stripping special AND added control tokens."""
     skip = set(tokenizer.all_special_ids)
     for tok, tok_id in getattr(tokenizer, "added_tokens_encoder", {}).items():
         if tok.startswith("<"):
@@ -67,11 +60,7 @@ def _load_pipeline(language: str) -> tuple[Any, Any]:
 
 
 def _indic_inputs(tokenizer: Any, model: Any, text: str, lang_code: str, max_input_tokens: int):
-    """Tokenize input for IndicBART using its required format.
-
-    IndicBART was trained on ``"<text> </s> <2xx>"`` inputs (with no automatic
-    special tokens), so we append the language token ourselves.
-    """
+    """Tokenize input for IndicBART using its required ``"<text> </s> <2xx>"`` format."""
     lang_tok = f"<2{lang_code[:2]}>"
     formatted = f"{text} </s> {lang_tok}"
     return tokenizer(
@@ -90,6 +79,13 @@ def summarize(
     min_length: int | None = None,
 ) -> str:
     """Summarize ``text`` in the given language and return the summary string."""
+    from .config import SUMMARY_PROVIDER  # noqa: PLC0415
+
+    if SUMMARY_PROVIDER == "gemini":
+        from .llm_api import summarize_with_gemini  # noqa: PLC0415
+
+        return summarize_with_gemini(text, language, max_length=max_length, min_length=min_length)
+
     import torch  # noqa: PLC0415
 
     cfg = SUMMARIZATION_MODELS[language]
@@ -104,9 +100,6 @@ def summarize(
 
     lang_code = cfg.get("lang_code")
     if lang_code:
-        # IndicBART: "<text> </s> <2xx>" input, decoder starts at the language
-        # token, and pad/bos/eos ids must be set explicitly because the
-        # tokenizer's own defaults ([CLS]/[SEP]) differ from the model's.
         inputs = _indic_inputs(tokenizer, model, text, lang_code, cfg["max_input_tokens"])
         start_id = _decoder_start_id(tokenizer, lang_code)
         if start_id is not None:
@@ -124,5 +117,4 @@ def summarize(
     with torch.no_grad():
         output_ids = model.generate(**inputs, **gen_kwargs)
 
-    summary = _decode_clean(tokenizer, output_ids[0].tolist())
-    return summary.strip()
+    return _decode_clean(tokenizer, output_ids[0].tolist()).strip()

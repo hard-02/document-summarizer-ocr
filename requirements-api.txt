@@ -1,0 +1,7 @@
+# Lightweight deployment dependencies for the Gemini API backend.
+# No PyTorch / Transformers / EasyOCR — the model runs server-side.
+fastapi>=0.110
+uvicorn[standard]>=0.29
+python-multipart>=0.0.9
+pymupdf>=1.23
+python-docx>=1.1

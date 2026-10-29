@@ -1,15 +1,12 @@
-"""FastAPI backend for the Multilingual Document & Image Summarizer.
+"""FastAPI backend for the Multilingual Document Summarizer.
 
-Serves:
-  * a JSON API  (/api/*)
-  * the static frontend (web/static/)
+Serves a JSON API (/api/*) and the static frontend (web/static/).
 
 Run with:
     uvicorn web.server:app --reload
 """
 from __future__ import annotations
 
-import io
 import sys
 import tempfile
 from pathlib import Path
@@ -23,16 +20,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from src.config import SUMMARIZATION_MODELS
-from src.ocr import image_to_text
+from src.config import LANGUAGES, SUMMARY_PROVIDER, SUMMARIZATION_MODELS
 from src.summarizer import summarize
 from src.text_extraction import extract_text
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 
-app = FastAPI(title="Doc & Image Summarizer API", version="1.0.0")
+app = FastAPI(title="Document Summarizer API", version="2.0.0")
 
-# Allow local development from any origin (frontend is served same-origin anyway).
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -64,7 +59,7 @@ def _validate_language(language: str) -> str:
 
 @app.get("/api/health")
 def health() -> dict:
-    return {"status": "ok", "languages": list(SUMMARIZATION_MODELS)}
+    return {"status": "ok", "languages": list(LANGUAGES), "provider": SUMMARY_PROVIDER}
 
 
 @app.post("/api/summarize-text", response_model=SummaryResponse)
@@ -103,31 +98,6 @@ async def summarize_document(
 
     summary = summarize(text, language, max_length, min_length)
     return SummaryResponse(language=language, summary=summary, source_text=text, source_length=len(text))
-
-
-@app.post("/api/ocr-summarize", response_model=SummaryResponse)
-async def ocr_summarize(
-    file: UploadFile = File(...),
-    language: str = Form("en"),
-    max_length: Optional[int] = Form(None),
-    min_length: Optional[int] = Form(None),
-) -> SummaryResponse:
-    language = _validate_language(language)
-    data = await file.read()
-
-    try:
-        from PIL import Image  # noqa: PLC0415
-
-        image = Image.open(io.BytesIO(data))
-        ocr_text = image_to_text(image)
-    except Exception as exc:  # noqa: BLE001
-        raise HTTPException(status_code=400, detail=f"OCR failed: {exc}") from exc
-
-    if not ocr_text.strip():
-        raise HTTPException(status_code=422, detail="No text detected in the image")
-
-    summary = summarize(ocr_text, language, max_length, min_length)
-    return SummaryResponse(language=language, summary=summary, source_text=ocr_text, source_length=len(ocr_text))
 
 
 # Serve the frontend last so /api/* routes take precedence.

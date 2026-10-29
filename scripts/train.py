@@ -63,15 +63,6 @@ PRESETS = {
         "tokenizer_kwargs": {"do_lower_case": False, "use_fast": False},
         "lang_code": "hi_IN",
     },
-    "mr": {
-        "model_id": "ai4bharat/IndicBARTSS",
-        "dataset": "csebuetnlp/xlsum",
-        "dataset_config": "marathi",
-        "text_col": "text",
-        "summary_col": "summary",
-        "tokenizer_kwargs": {"do_lower_case": False, "use_fast": False},
-        "lang_code": "mr_IN",
-    },
 }
 
 
@@ -85,17 +76,12 @@ _XLSUM_PARQUET = {
         "validation": [f"{_XLSUM_BASE}/hindi/validation/0000.parquet"],
         "test": [f"{_XLSUM_BASE}/hindi/test/0000.parquet"],
     },
-    "mr": {
-        "train": [f"{_XLSUM_BASE}/marathi/train/0000.parquet"],
-        "validation": [f"{_XLSUM_BASE}/marathi/validation/0000.parquet"],
-        "test": [f"{_XLSUM_BASE}/marathi/test/0000.parquet"],
-    },
 }
 
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Fine-tune a summarization model.")
-    p.add_argument("--language", choices=["en", "hi", "mr"], default="en")
+    p.add_argument("--language", choices=["en", "hi"], default="en")
     p.add_argument("--model-id", default=None, help="Override the preset Hugging Face model id")
     p.add_argument("--dataset", default=None, help="Override the dataset name")
     p.add_argument("--dataset-config", default=None, help="Override the dataset config/version")

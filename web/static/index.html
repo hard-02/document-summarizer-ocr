@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Doc &amp; Image Summarizer</title>
+  <title>Document Summarizer</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
   <header class="hero">
     <div class="hero-inner">
-      <h1>📄 Multilingual Document &amp; Image Summarizer</h1>
-      <p>Summarize documents and images (via OCR) in English, Hindi, and Marathi.</p>
+      <h1>📄 Multilingual Document Summarizer</h1>
+      <p>Abstractive summaries of documents in English and Hindi.</p>
     </div>
   </header>
 
@@ -19,7 +19,6 @@
     <section class="card">
       <div class="tabs" role="tablist">
         <button class="tab active" data-tab="document" role="tab">📄 Document</button>
-        <button class="tab" data-tab="image" role="tab">🖼️ Image</button>
         <button class="tab" data-tab="text" role="tab">✍️ Text</button>
       </div>
 
@@ -29,7 +28,6 @@
           <select id="language">
             <option value="en">English</option>
             <option value="hi">Hindi (हिन्दी)</option>
-            <option value="mr">Marathi (मराठी)</option>
           </select>
         </label>
         <label class="field">
@@ -50,17 +48,6 @@
           <p><b>Drop a file here</b> or click to browse</p>
           <p class="muted">.txt · .pdf · .docx</p>
         </div>
-      </div>
-
-      <!-- Image panel -->
-      <div class="panel" id="panel-image">
-        <div class="dropzone" id="dropzone-image">
-          <input type="file" id="file-image" accept=".png,.jpg,.jpeg" hidden />
-          <div class="dropzone-icon">🖼️</div>
-          <p><b>Drop an image here</b> or click to browse</p>
-          <p class="muted">.png · .jpg · .jpeg</p>
-        </div>
-        <img id="image-preview" class="preview hidden" alt="Preview" />
       </div>
 
       <!-- Text panel -->
@@ -89,8 +76,8 @@
     </section>
 
     <footer class="foot muted">
-      Models: BART-large-CNN (English) · IndicBART (Hindi/Marathi) · EasyOCR (en+hi+mr).
-      <a href="https://github.com" target="_blank" rel="noopener">View on GitHub</a>
+      Models: BART (English) · IndicBART (Hindi). Optional Gemini API backend.
+      <a href="https://github.com/hard-02/document-summarizer-ocr" target="_blank" rel="noopener">View on GitHub</a>
     </footer>
   </main>
 

@@ -3,13 +3,11 @@
 const LANG_CONFIG = {
   en: { min: 40, max: 180 },
   hi: { min: 5, max: 64 },
-  mr: { min: 5, max: 64 },
 };
 
 const state = {
   tab: "document",
   documentFile: null,
-  imageFile: null,
 };
 
 const $ = (id) => document.getElementById(id);
@@ -51,7 +49,7 @@ maxEl.addEventListener("input", () => (maxVal.textContent = maxEl.value));
 applyLangConfig();
 
 // ---------------------------------------------------------------------------
-// Dropzones
+// Dropzone (document only)
 // ---------------------------------------------------------------------------
 function setupDropzone(dropzoneId, inputId, onFile) {
   const dz = $(dropzoneId);
@@ -75,24 +73,10 @@ function setupDropzone(dropzoneId, inputId, onFile) {
 
 setupDropzone("dropzone-document", "file-document", (file) => {
   state.documentFile = file;
-  setDropzoneLabel("dropzone-document", file.name);
+  const p = $("dropzone-document").querySelector("p b");
+  if (p) p.textContent = file.name;
   updateRun();
 });
-
-setupDropzone("dropzone-image", "file-image", (file) => {
-  state.imageFile = file;
-  setDropzoneLabel("dropzone-image", file.name);
-  const preview = $("image-preview");
-  preview.src = URL.createObjectURL(file);
-  preview.classList.remove("hidden");
-  updateRun();
-});
-
-function setDropzoneLabel(dzId, name) {
-  const dz = $(dzId);
-  const p = dz.querySelector("p b");
-  if (p) p.textContent = name;
-}
 
 const textInput = $("text-input");
 textInput.addEventListener("input", updateRun);
@@ -103,7 +87,6 @@ textInput.addEventListener("input", updateRun);
 function updateRun() {
   let ready = false;
   if (state.tab === "document") ready = !!state.documentFile;
-  else if (state.tab === "image") ready = !!state.imageFile;
   else ready = textInput.value.trim().length > 0;
   $("run-btn").disabled = !ready;
 }
@@ -168,17 +151,12 @@ async function run() {
         }),
       });
     } else {
-      const isImage = state.tab === "image";
-      const file = isImage ? state.imageFile : state.documentFile;
       const fd = new FormData();
-      fd.append("file", file);
+      fd.append("file", state.documentFile);
       fd.append("language", language);
       fd.append("max_length", String(maxLength));
       fd.append("min_length", String(minLength));
-      resp = await fetch(isImage ? "/api/ocr-summarize" : "/api/summarize-document", {
-        method: "POST",
-        body: fd,
-      });
+      resp = await fetch("/api/summarize-document", { method: "POST", body: fd });
     }
 
     const data = await resp.json().catch(() => ({}));

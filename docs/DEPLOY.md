@@ -1,64 +1,48 @@
 # Deployment Guide
 
-A shareable, clickable link for your professor. Pick whichever is easiest.
+Three ways to share the project.
 
 ---
 
-## Option A — Hugging Face Spaces (easiest, free)
+## Option A — Gemini demo on Render (free, interactive)
 
-Deploys the **Streamlit** demo with no Docker knowledge.
+The lightweight FastAPI app in **Gemini mode** — no PyTorch, no OCR.
 
-1. Go to [huggingface.co/new-space](https://huggingface.co/new-space).
-2. SDK: **Streamlit**. Space name: e.g. `doc-summarizer`.
-3. Upload these files (or link your GitHub repo):
-   - `app.py`
-   - `requirements.txt`
-   - `src/` (the whole folder)
-4. Click **Create Space**. It builds and gives you a public URL like
-   `https://huggingface.co/spaces/<you>/doc-summarizer`.
+1. Get a free Gemini key at <https://aistudio.google.com/apikey>.
+2. [render.com](https://render.com) → **New → Web Service** → connect this repo.
+3. Set:
+   - **Build**: Docker
+   - **Dockerfile path**: `Dockerfile.api`
+   - **Env vars**: `SUMMARY_PROVIDER=gemini`, `GEMINI_API_KEY=<key>`
+4. Deploy and wait for the build (~2–4 min).
 
-> The models download on first request inside the Space (~1–2 GB) — the first
-> summarize may take a few minutes, then it's cached.
+Full details: [DEPLOY_RENDER.md](DEPLOY_RENDER.md).
 
 ---
 
-## Option B — Docker (the FastAPI web app, any cloud)
+## Option B — Hugging Face static page (free)
 
-Build and run locally first to verify:
+Hugging Face's free tier only allows *Static* Spaces. The Space
+`hardikpathak/doc-summarizer` hosts a static project landing page (screenshot +
+results + GitHub link). It is informational, not interactive.
+
+---
+
+## Option C — Docker (local models)
 
 ```bash
 docker build -t doc-summarizer .
 docker run -p 8000:8000 doc-summarizer
-# open http://localhost:8000
 ```
 
-Then deploy the image to any container host:
-
-| Host | What to do |
-|------|-----------|
-| [Render](https://render.com) | New Web Service → point at the repo, Dockerfile auto-detected |
-| [Railway](https://railway.app) | New Project → Deploy from GitHub repo |
-| [Fly.io](https://fly.io) | `fly launch` → deploys the Dockerfile |
-| AWS/GCP/Azure | Push the image to a registry and run it as a container |
-
-The `Dockerfile` serves the **FastAPI + frontend** app on port `8000`.
+This image includes PyTorch + the local models (~2 GB). Use `Dockerfile.api`
+for the slim Gemini build instead.
 
 ---
 
-## Option C — Streamlit Community Cloud (free, GitHub-based)
+## Notes
 
-1. Push this repo to GitHub (already done).
-2. Go to [share.streamlit.io](https://share.streamlit.io).
-3. **New app** → pick the repo, branch `main`, main file path `app.py`.
-4. Deploy. It builds from `requirements.txt` and runs `app.py`.
-
----
-
-## Notes for all options
-
-- The app auto-uses `models/<lang>/` if you add fine-tuned weights; otherwise it
-  downloads the public checkpoints.
-- First request triggers model downloads (BART, IndicBART, EasyOCR). Subsequent
-  requests are fast.
-- For the OCR (image) path, ensure the host has enough memory (~2 GB free) since
-  EasyOCR loads detection + recognition models into RAM.
+- Keep the Gemini key **server-side** (environment variable), never in the
+  frontend.
+- Render's free tier sleeps after inactivity; the first request may take
+  ~30–60 s.
