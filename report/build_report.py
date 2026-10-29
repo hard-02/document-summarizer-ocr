@@ -772,8 +772,8 @@ numbered(doc, [
 # ---------------------------------------------------------------- APPENDIX A
 doc.add_page_break()
 para(doc, "APPENDIX A: IMPORTANT CODE SNIPPETS", size=14, bold=True, align="center", after=10)
-para(doc, "The screenshots below show the main code modules of the project.",
-     style="Body Text", align="justify")
+para(doc, "This appendix presents the core code modules of the project as editor screenshots, "
+     "followed by a short description of each.", style="Body Text", align="justify")
 
 CODE_DIR = ROOT / "report" / "code_screenshots"
 
@@ -789,24 +789,43 @@ def code_image(doc, filename, caption):
 
 subsection(doc, "A.1 Summarization Function")
 para(doc, "Source file: src/summarizer.py", size=10, italic=True)
-para(doc, "The summarize() function routes to Gemini when configured; otherwise it loads the "
-     "language-specific model, tokenizes the input, applies the IndicBART format where required, "
-     "and generates the summary with beam search.", style="Body Text", align="justify")
 code_image(doc, "01_summarizer.png", "Figure A.1: Summarization function (src/summarizer.py)")
+para(doc, "Description: The summarize() function is the single entry point for every "
+     "summarization request. It first checks the configured backend: when SUMMARY_PROVIDER is "
+     "\u201cgemini\u201d it delegates to summarize_with_gemini() and returns the result. "
+     "Otherwise, it loads the language-specific tokenizer and model, builds the generation "
+     "settings (beam search, length limits, no-repeat n-grams), tokenizes and truncates the input, "
+     "applies the IndicBART language-token format for Hindi, calls model.generate(), and decodes "
+     "the output while stripping control tokens. The same function therefore serves both the "
+     "FastAPI web application and the Streamlit demo.", style="Body Text", align="justify")
 
 subsection(doc, "A.2 OCR Routing")
 para(doc, "Source file: src/ocr.py", size=10, italic=True)
-para(doc, "image_to_text_any() uses Gemini vision in cloud mode and EasyOCR in local mode.",
-     style="Body Text", align="justify")
 code_image(doc, "02_ocr.png", "Figure A.2: OCR routing (src/ocr.py)")
+para(doc, "Description: image_to_text_any() abstracts over two OCR backends. In Gemini mode it "
+     "forwards the raw image bytes to extract_text_with_gemini(), so no local OCR model is needed "
+     "in the cloud deployment. In local mode it converts the bytes into a PIL image and calls "
+     "image_to_text(), which runs EasyOCR for English and Hindi. This keeps the same UI code "
+     "working in both the lightweight cloud build and the full local installation.",
+     style="Body Text", align="justify")
 
-subsection(doc, "A.3 FastAPI Image Endpoint")
+subsection(doc, "A.3 Image Summarization Endpoint")
 para(doc, "Source file: web/server.py", size=10, italic=True)
 code_image(doc, "03_api.png", "Figure A.3: Image summarization endpoint (web/server.py)")
+para(doc, "Description: The /api/ocr-summarize endpoint accepts a multipart image upload together "
+     "with the target language and length limits. It validates the language, reads the image "
+     "bytes, extracts the text with image_to_text_any(), rejects the request when no text is "
+     "detected, and then summarizes the extracted text. The response returns both the summary and "
+     "the OCR text so the frontend can display them.", style="Body Text", align="justify")
 
 subsection(doc, "A.4 Gemini Vision Client")
 para(doc, "Source file: src/llm_api.py", size=10, italic=True)
 code_image(doc, "04_gemini.png", "Figure A.4: Gemini vision OCR client (src/llm_api.py)")
+para(doc, "Description: extract_text_with_gemini() implements OCR through Gemini's multimodal "
+     "API. It builds an extraction prompt, base64-encodes the image, and sends it as inline image "
+     "data with the correct MIME type. The shared _generate() helper posts the request to the "
+     "Gemini REST endpoint and returns the recognized text, which is then passed to the "
+     "summarization step.", style="Body Text", align="justify")
 
 # ---------------------------------------------------------------- APPENDIX B
 doc.add_page_break()
